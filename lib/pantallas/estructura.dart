@@ -31,7 +31,7 @@ class _EstructuraState extends State<Estructura> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _pestana,
         onDestinationSelected: (i) => setState(() => _pestana = i),
-        destinations: const [K
+        destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
