@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'inicio.dart';
 import 'vender.dart';
 import 'platos.dart';
-
+import '../tema/cenefa.dart';
 class Estructura extends StatefulWidget {
   const Estructura({super.key});
 
@@ -22,11 +22,16 @@ class _EstructuraState extends State<Estructura> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(child: _pantallas[_pestana]),
+      body: Column(
+        children: [
+          const SafeArea(bottom: false, child: Cenefa()),
+          Expanded(child: _pantallas[_pestana]),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _pestana,
         onDestinationSelected: (i) => setState(() => _pestana = i),
-        destinations: const [
+        destinations: const [K
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
