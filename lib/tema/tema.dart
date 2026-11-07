@@ -20,6 +20,25 @@ ThemeData crearTema() {
       backgroundColor: Colors.white,
       indicatorColor: Colores.beige,
     ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colores.crema,
+      surfaceTintColor: Colors.transparent,
+      centerTitle: true,
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith(
+              (s) => s.contains(WidgetState.selected)
+              ? Colores.pizarra
+              : Colors.white,
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith(
+              (s) => s.contains(WidgetState.selected)
+              ? Colors.white
+              : Colores.pizarra,
+        ),
+      ),
+    ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(48),

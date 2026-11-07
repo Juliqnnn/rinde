@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'tema/tema.dart';
 import 'pantallas/estructura.dart';
 
 void main() {
-  runApp(const RindeApp());
+  runApp(const ProviderScope(child: RindeApp()));
 }
 
 class RindeApp extends StatelessWidget {
