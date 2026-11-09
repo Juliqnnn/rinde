@@ -11,7 +11,10 @@ final baseDeDatosProvider = Provider<BaseDeDatos>((ref) {
 final categoriasProvider = StreamProvider<List<Categoria>>((ref) {
   final db = ref.watch(baseDeDatosProvider);
   return (db.select(db.categorias)
-    ..orderBy([(c) => OrderingTerm.asc(c.nombre)]))
+    ..orderBy([
+          (c) => OrderingTerm.asc(c.orden),
+          (c) => OrderingTerm.asc(c.nombre),
+    ]))
       .watch();
 });
 
@@ -20,5 +23,15 @@ final ingredientesProvider = StreamProvider<List<Ingrediente>>((ref) {
   return (db.select(db.ingredientes)
     ..where((i) => i.archivado.equals(false))
     ..orderBy([(i) => OrderingTerm.asc(i.nombre)]))
+      .watch();
+});
+
+final movimientosProvider =
+StreamProvider.family<List<Movimiento>, String>((ref, ingredienteId) {
+  final db = ref.watch(baseDeDatosProvider);
+  return (db.select(db.movimientos)
+    ..where((m) => m.ingredienteId.equals(ingredienteId))
+    ..orderBy([(m) => OrderingTerm.desc(m.fecha)])
+    ..limit(10))
       .watch();
 });
