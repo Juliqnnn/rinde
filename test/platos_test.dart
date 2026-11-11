@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rinde/logica/costos.dart';
+import 'package:rinde/comun/logica/costos.dart';
 
 void main() {
   test('costo de un plato con ingredientes', () {

@@ -18,14 +18,16 @@ App para pequeños negocios de comida en Chile (completos, sándwiches, cafeter�
 ## Tecnologías
 - Flutter/Dart, Riverpod (providers, StreamProvider, `.family`), Drift (SQLite local, `watch()`, migraciones `onUpgrade`, schemaVersion 5), build_runner, uuid, image_picker, path_provider.
 - Nube (en prueba de concepto): Supabase (Postgres + Auth + RLS) y PowerSync (SQLite local sincronizado con Postgres, cola de subida con `uploadData()`).
-- Capas: pantallas → estado (providers) → reglas (`lib/logica`) → datos (`lib/datos`).
+- Capas: pantallas → estado (providers) → reglas (`logica/`) → datos (`datos/`).
 
-## Estructura
-- `lib/datos/` base_de_datos.dart (tablas, migraciones, métodos), proveedores.dart
-- `lib/logica/` costos, platos, medidas, formato, fotos
-- `lib/pantallas/` ingredientes, nuevo_ingrediente, detalle_ingrediente, platos_lista, nuevo_plato, detalle_plato
-- `lib/tema/` colores y tema (fuente Nunito en assets)
-- `test/` platos_test.dart (los tests de costos están ahí)
+## Estructura (por función)
+- `lib/main.dart` arranque (inicia Supabase).
+- `lib/app/` estructura (pestañas), puerta_sesion (login o app).
+- `lib/comun/` lo compartido: `datos/` (base_de_datos.dart con tablas/migraciones/métodos, proveedores.dart con `baseDeDatosProvider`), `logica/` (costos, formato, medidas), `tema/` (colores, tema, cenefa; fuente Nunito en assets), `widgets/` (pantalla_vacia).
+- `lib/funciones/<función>/`: ingredientes, platos, sesion, inicio, ventas. Cada función tiene sus pantallas, providers y lógica.
+- Regla: subcarpetas (`datos/`, `logica/`, `pantallas/`) solo cuando la función tiene ~6 archivos o más; si no, queda plana.
+- Imports siempre como `package:rinde/...` (no rutas relativas).
+- `test/` platos_test.dart (los tests de costos están ahí).
 
 ## Reglas de negocio decididas
 - Stock y costo se guardan en g / ml / u. El usuario elige kg, g, L, ml o unidades al ingresar.
