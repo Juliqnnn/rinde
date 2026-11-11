@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'ingredientes.dart';
+import 'platos_lista.dart';
 
 class PlatosPantalla extends StatefulWidget {
   const PlatosPantalla({super.key});
@@ -9,7 +10,7 @@ class PlatosPantalla extends StatefulWidget {
 }
 
 class _PlatosPantallaState extends State<PlatosPantalla> {
-  int _vista = 1;
+  int _vista = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +40,7 @@ class _PlatosPantallaState extends State<PlatosPantalla> {
           const SizedBox(height: 12),
           Expanded(
             child: _vista == 0
-                ? const Center(child: Text('Aquí cargarás tus platos.'))
+                ? const PlatosListaPantalla()
                 : const IngredientesPantalla(),
           ),
         ],

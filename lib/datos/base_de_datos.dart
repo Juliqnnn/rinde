@@ -60,16 +60,49 @@ class Movimientos extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class Platos extends Table {
+  TextColumn get id => text().clientDefault(() => _uuid.v4())();
+  TextColumn get nombre => text()();
+  RealColumn get precioVenta => real()();
+  // Costo escrito a mano. Solo se usa si el plato no tiene ingredientes.
+  RealColumn get costoManual => real().withDefault(const Constant(0))();
+  // Nombre del archivo de la foto (vive en la carpeta de la app).
+  TextColumn get foto => text().nullable()();
+  // Para emparejar con apps de delivery más adelante.
+  TextColumn get codigoExterno => text().nullable()();
+  BoolColumn get archivado => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get creadoEn =>
+      dateTime().clientDefault(() => DateTime.now())();
+  DateTimeColumn get actualizadoEn =>
+      dateTime().clientDefault(() => DateTime.now())();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// Une platos con ingredientes: una fila por ingrediente de cada receta.
+class RecetaItems extends Table {
+  TextColumn get id => text().clientDefault(() => _uuid.v4())();
+  TextColumn get platoId => text().references(Platos, #id)();
+  TextColumn get ingredienteId => text().references(Ingredientes, #id)();
+  // Cuánto lleva UN plato, en g, ml o unidades.
+  RealColumn get cantidad => real()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 const _categoriasBase = [
   'Verduras', 'Carnes', 'Lácteos', 'Panes', 'Bebidas', 'Salsas', 'Envases',
 ];
 
-@DriftDatabase(tables: [Categorias, Ingredientes, Movimientos])
+@DriftDatabase(
+    tables: [Categorias, Ingredientes, Movimientos, Platos, RecetaItems])
 class BaseDeDatos extends _$BaseDeDatos {
   BaseDeDatos() : super(driftDatabase(name: 'rinde'));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -82,7 +115,8 @@ class BaseDeDatos extends _$BaseDeDatos {
               nombre: _categoriasBase[i],
               orden: Value(i + 1),
             ),
-          CategoriasCompanion.insert(nombre: 'Otros', orden: const Value(1000)),
+          CategoriasCompanion.insert(
+              nombre: 'Otros', orden: const Value(1000)),
         ]);
       });
     },
@@ -102,6 +136,13 @@ class BaseDeDatos extends _$BaseDeDatos {
           await (update(categorias)..where((x) => x.id.equals(c.id)))
               .write(CategoriasCompanion(orden: Value(orden)));
         }
+      }
+      if (desde < 4) {
+        await m.createTable(platos);
+        await m.createTable(recetaItems);
+      }
+      if (desde < 5) {
+        await m.addColumn(platos, platos.foto);
       }
     },
     beforeOpen: (detalles) async {
@@ -127,8 +168,12 @@ class BaseDeDatos extends _$BaseDeDatos {
     return id;
   }
 
+  Future<Ingrediente> ingredientePorId(String id) =>
+      (select(ingredientes)..where((i) => i.id.equals(id))).getSingle();
+
   // Crea el ingrediente y, si hay stock, anota el primer movimiento.
-  Future<void> crearIngrediente({
+  // Devuelve el id del ingrediente creado.
+  Future<String> crearIngrediente({
     required String nombre,
     required Unidad unidad,
     String? categoriaId,
@@ -154,6 +199,7 @@ class BaseDeDatos extends _$BaseDeDatos {
           costoUnitario: Value(costoUnitario),
         ));
       }
+      return id;
     });
   }
 
@@ -221,5 +267,78 @@ class BaseDeDatos extends _$BaseDeDatos {
         motivo: Value(motivo),
       ));
     });
+  }
+
+  // Crea el plato y su receta (si la tiene) en una sola transacción.
+  Future<void> crearPlato({
+    required String nombre,
+    required double precioVenta,
+    double costoManual = 0,
+    String? foto,
+    List<({String ingredienteId, double cantidad})> receta = const [],
+  }) {
+    return transaction(() async {
+      final id = _uuid.v4();
+      await into(platos).insert(PlatosCompanion.insert(
+        id: Value(id),
+        nombre: nombre,
+        precioVenta: precioVenta,
+        costoManual: Value(costoManual),
+        foto: Value(foto),
+      ));
+      for (final r in receta) {
+        await into(recetaItems).insert(RecetaItemsCompanion.insert(
+          platoId: id,
+          ingredienteId: r.ingredienteId,
+          cantidad: r.cantidad,
+        ));
+      }
+    });
+  }
+
+  Future<void> cambiarFotoPlato(String platoId, String? foto) {
+    return (update(platos)..where((p) => p.id.equals(platoId))).write(
+      PlatosCompanion(
+        foto: Value(foto),
+        actualizadoEn: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> archivarPlato(String id) {
+    return (update(platos)..where((p) => p.id.equals(id))).write(
+      PlatosCompanion(
+        archivado: const Value(true),
+        actualizadoEn: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  // Si el ingrediente ya estaba en la receta, suma la cantidad.
+  Future<void> agregarAReceta({
+    required String platoId,
+    required String ingredienteId,
+    required double cantidad,
+  }) async {
+    final existente = await (select(recetaItems)
+      ..where((r) =>
+      r.platoId.equals(platoId) &
+      r.ingredienteId.equals(ingredienteId)))
+        .getSingleOrNull();
+    if (existente == null) {
+      await into(recetaItems).insert(RecetaItemsCompanion.insert(
+        platoId: platoId,
+        ingredienteId: ingredienteId,
+        cantidad: cantidad,
+      ));
+    } else {
+      await (update(recetaItems)..where((r) => r.id.equals(existente.id)))
+          .write(RecetaItemsCompanion(
+          cantidad: Value(existente.cantidad + cantidad)));
+    }
+  }
+
+  Future<void> quitarDeReceta(String id) {
+    return (delete(recetaItems)..where((r) => r.id.equals(id))).go();
   }
 }

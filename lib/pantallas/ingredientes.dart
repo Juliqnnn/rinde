@@ -52,11 +52,12 @@ class _IngredientesPantallaState extends ConsumerState<IngredientesPantalla> {
   }
 
   Future<void> _agregar() async {
-    final creado = await Navigator.push<bool>(
+    // El formulario devuelve el id del ingrediente creado (o nada si cancelas).
+    final id = await Navigator.push<String>(
       context,
       MaterialPageRoute(builder: (_) => const NuevoIngredientePantalla()),
     );
-    if (creado != true || !mounted) return;
+    if (id == null || !mounted) return;
     // Después de crear: sin filtros y con lo nuevo arriba.
     _limpiarFiltros();
     setState(() => _orden = Orden.recientes);
@@ -224,7 +225,7 @@ class _IngredientesPantallaState extends ConsumerState<IngredientesPantalla> {
                         controller: _listaCtrl,
                         padding: const EdgeInsets.only(right: 10),
                         itemCount: filtrados.length,
-                        separatorBuilder: (_, __) =>
+                        separatorBuilder: (_, _) =>
                         const SizedBox(height: 8),
                         itemBuilder: (_, k) {
                           final i = filtrados[k];

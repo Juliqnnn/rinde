@@ -26,6 +26,12 @@ final ingredientesProvider = StreamProvider<List<Ingrediente>>((ref) {
       .watch();
 });
 
+// Incluye los archivados: sirve para calcular costos de platos.
+final todosLosIngredientesProvider = StreamProvider<List<Ingrediente>>((ref) {
+  final db = ref.watch(baseDeDatosProvider);
+  return db.select(db.ingredientes).watch();
+});
+
 final movimientosProvider =
 StreamProvider.family<List<Movimiento>, String>((ref, ingredienteId) {
   final db = ref.watch(baseDeDatosProvider);
@@ -34,4 +40,17 @@ StreamProvider.family<List<Movimiento>, String>((ref, ingredienteId) {
     ..orderBy([(m) => OrderingTerm.desc(m.fecha)])
     ..limit(10))
       .watch();
+});
+
+final platosProvider = StreamProvider<List<Plato>>((ref) {
+  final db = ref.watch(baseDeDatosProvider);
+  return (db.select(db.platos)
+    ..where((p) => p.archivado.equals(false))
+    ..orderBy([(p) => OrderingTerm.asc(p.nombre)]))
+      .watch();
+});
+
+final recetasProvider = StreamProvider<List<RecetaItem>>((ref) {
+  final db = ref.watch(baseDeDatosProvider);
+  return db.select(db.recetaItems).watch();
 });

@@ -9,7 +9,9 @@ import '../tema/colores.dart';
 enum Inicio { compre, yaTenia, sinStock }
 
 class NuevoIngredientePantalla extends ConsumerStatefulWidget {
-  const NuevoIngredientePantalla({super.key});
+  final String? nombreInicial;
+
+  const NuevoIngredientePantalla({super.key, this.nombreInicial});
 
   @override
   ConsumerState<NuevoIngredientePantalla> createState() =>
@@ -27,6 +29,11 @@ class _NuevoIngredientePantallaState
   Inicio _inicio = Inicio.compre;
   String? _errorNombre;
   String? _errorCantidad;
+  @override
+  void initState() {
+    super.initState();
+    _nombre.text = widget.nombreInicial ?? '';
+  }
 
   @override
   void dispose() {
@@ -134,7 +141,7 @@ class _NuevoIngredientePantallaState
       });
       return;
     }
-    await ref.read(baseDeDatosProvider).crearIngrediente(
+    final id = await ref.read(baseDeDatosProvider).crearIngrediente(
       nombre: nombre,
       unidad: _medida.base,
       categoriaId: _categoriaId,
@@ -144,7 +151,7 @@ class _NuevoIngredientePantallaState
           ? TipoMovimiento.compra
           : TipoMovimiento.inicial,
     );
-    if (mounted) Navigator.pop(context, true);
+    if (mounted) Navigator.pop(context, id);
   }
 
   Widget _campo(

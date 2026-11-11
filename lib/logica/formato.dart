@@ -110,3 +110,10 @@ String cantidadDe(double valor, Unidad u) {
       ? '$signo$kilos $grande'
       : '$signo$kilos $grande $resto $corta';
 }
+
+// 0.625 -> "62,5 %"; null -> "—"
+String porcentaje(double? m) {
+  if (m == null) return '—';
+  final v = (m * 1000).round() / 10;
+  return '${v.toStringAsFixed(v % 1 == 0 ? 0 : 1).replaceAll('.', ',')} %';
+}
