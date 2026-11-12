@@ -249,11 +249,11 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.35.2"
-  drift_flutter:
+  drift_sqlite_async:
     dependency: "direct main"
     description:
-      name: drift_flutter
-      sha256: "91acf4bee7c3c84467cba46455aa70e5292a3b889f4582645d74f2e5a8c106f2"
+      name: drift_sqlite_async
+      sha256: "28c666847ecbc2e90dbcf8e8c2eecbf847a38af7e6480efc08f3a3c39e060f8d"
       url: "https://pub.dev"
     source: hosted
     version: "0.3.1"
@@ -805,6 +805,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.9.1"
+  powersync:
+    dependency: "direct main"
+    description:
+      name: powersync
+      sha256: "9a2d414fe7f78a21604de8d60214d6405d4fabcfde72c9a2cfa54b25029e4faa"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.6.1"
+  powersync_flutter_libs:
+    dependency: transitive
+    description:
+      name: powersync_flutter_libs
+      sha256: "24324947bffee25912abd3534203d7ab070b99d3186a8de658205ffb44902971"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.0+eol"
   pub_semver:
     dependency: transitive
     description:
@@ -962,6 +978,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.5.2"
+  sqlite3_connection_pool:
+    dependency: transitive
+    description:
+      name: sqlite3_connection_pool
+      sha256: "0813880ccff75e3d1a91ff4b15be09b3d29f937acc29fae0a62cd1b3591dc97c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.17"
   sqlite3_flutter_libs:
     dependency: transitive
     description:
@@ -970,6 +994,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.0+eol"
+  sqlite3_web:
+    dependency: transitive
+    description:
+      name: sqlite3_web
+      sha256: "7e63fde368321eb24ccbf972814868b57c94d904ac68daa503ff7ef6a06ffa05"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.9.6"
+  sqlite_async:
+    dependency: transitive
+    description:
+      name: sqlite_async
+      sha256: c91643c3332b79783c2f3a3b24f1a22c7f5a88f05c7a40ff2604c658b2fdb9b1
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.14.8"
   sqlparser:
     dependency: transitive
     description:

@@ -16,7 +16,7 @@ App para pequeños negocios de comida en Chile (completos, sándwiches, cafeter�
 - Toda tabla de negocio lleva el id del local y tiene Row Level Security (RLS) para que un local nunca vea datos de otro.
 
 ## Tecnologías
-- Flutter/Dart, Riverpod (providers, StreamProvider, `.family`), Drift (SQLite local, `watch()`, migraciones `onUpgrade`, schemaVersion 5), build_runner, uuid, image_picker, path_provider, supabase_flutter, google_sign_in, shared_preferences.
+- Flutter/Dart, Riverpod (providers, StreamProvider, `.family`), Drift (consultas tipadas y `watch()`, corriendo sobre la base de PowerSync con `drift_sqlite_async`; sin migraciones locales: las tablas las define `esquema_powersync.dart`), powersync, build_runner, uuid, image_picker, path_provider, supabase_flutter, google_sign_in, shared_preferences.
 - Nube (en prueba de concepto): Supabase (Postgres + Auth + RLS) y PowerSync (SQLite local sincronizado con Postgres, cola de subida con `uploadData()`).
 - Capas: pantallas → estado (providers) → reglas (`logica/`) → datos (`datos/`).
 
@@ -27,7 +27,7 @@ App para pequeños negocios de comida en Chile (completos, sándwiches, cafeter�
 - `lib/funciones/<función>/`: ingredientes, platos, sesion, local, inicio, ventas. Cada función tiene sus pantallas, providers y lógica.
 - Regla: subcarpetas (`datos/`, `logica/`, `pantallas/`) solo cuando la función tiene ~6 archivos o más; si no, queda plana.
 - Imports siempre como `package:rinde/...` (no rutas relativas).
-- `test/` platos_test.dart (los tests de costos están ahí).
+- `test/` platos_test.dart (costos), base_de_datos_test.dart (Drift sobre PowerSync real, sin nube), sesion_test.dart.
 
 ## Reglas de negocio decididas
 - Stock y costo se guardan en g / ml / u. El usuario elige kg, g, L, ml o unidades al ingresar.

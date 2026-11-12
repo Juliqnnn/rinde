@@ -6,12 +6,14 @@ import 'package:rinde/comun/datos/proveedores.dart';
 final platosProvider = StreamProvider<List<Plato>>((ref) {
   final db = ref.watch(baseDeDatosProvider);
   return (db.select(db.platos)
-    ..where((p) => p.archivado.equals(false))
+    ..where((p) => p.localId.equals(db.localId) & p.archivado.equals(false))
     ..orderBy([(p) => OrderingTerm.asc(p.nombre)]))
       .watch();
 });
 
 final recetasProvider = StreamProvider<List<RecetaItem>>((ref) {
   final db = ref.watch(baseDeDatosProvider);
-  return db.select(db.recetaItems).watch();
+  return (db.select(db.recetaItems)
+    ..where((r) => r.localId.equals(db.localId)))
+      .watch();
 });

@@ -224,6 +224,11 @@ streams:
 5. **Contraseña de `powersync_role`:** solo letras y números (nada de `@ : / # %`, que rompen la cadena de conexión).
 6. **Etapas C y D:** no se construyen funciones nuevas sobre el stock o costo sobrescritos en `ingredientes`, porque eso se reemplaza en la etapa E. Lo existente se migra tal cual o se deja fuera hasta E.
 
+7. **Stock y costo en C y D (2026-11-12):** `ingredientes` conserva `stock` y `costo_unitario` como columnas **solo del teléfono** (no existen en Postgres; un `NULL` se lee como 0). `uploadData` subirá solo una lista de columnas permitidas por tabla. `movimientos`, `platos` y `receta_items` quedan como `Table.localOnly` con `local_id` hasta las etapas E y F.
+
+## Avance
+- **Etapa C (2026-11-12):** paquetes `powersync` y `drift_sqlite_async` (sale `drift_flutter`); `esquema_powersync.dart`; Drift describe las vistas (sin `withDefault`, `unique` ni `references`; fechas como texto); `local_id` en todo y filtro por local activo; base nueva `rinde_nube.db`; tests en `test/base_de_datos_test.dart`. Queda para D: conectar (`fetchCredentials`, `uploadData`), leer `locales` sincronizado en vez de Supabase directo, y borrar datos al cerrar sesión.
+
 ## Pendientes antes de publicar
 - **Cuenta borrada del único miembro:** al borrar un usuario, sus filas en `miembros` se borran en cascada y `locales.creado_por` queda en null. Si era el **único** miembro, el local y todos sus datos quedan **huérfanos**: nadie los ve, pero siguen guardados. Eso choca con la política de Google Play de borrar los datos del usuario y ocupa espacio. Opciones a decidir:
   - Función `borrar_mi_cuenta()` (security definer) que borre primero los locales donde el usuario es el único dueño (los datos caen en cascada) y después el usuario.
