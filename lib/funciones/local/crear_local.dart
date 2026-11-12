@@ -37,15 +37,15 @@ class _CrearLocalPantallaState extends ConsumerState<CrearLocalPantalla> {
     });
     try {
       await ref.read(localRepositorioProvider).crear(usuario.id, nombre);
-      // Al recargar localProvider, la puerta muestra la app sola.
-      ref.invalidate(localProvider);
+      // Listo: sigue "cargando" hasta que el local llegue sincronizado;
+      // entonces localProvider cambia y la puerta muestra la app sola.
+      return;
     } on LocalError catch (e) {
       _error = e.mensaje;
     } catch (_) {
       _error = 'No se pudo crear el local. Revisa tu conexión a internet.';
-    } finally {
-      if (mounted) setState(() => _cargando = false);
     }
+    if (mounted) setState(() => _cargando = false);
   }
 
   @override

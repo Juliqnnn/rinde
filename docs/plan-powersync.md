@@ -229,6 +229,8 @@ streams:
 ## Avance
 - **Etapa C (2026-11-12):** paquetes `powersync` y `drift_sqlite_async` (sale `drift_flutter`); `esquema_powersync.dart`; Drift describe las vistas (sin `withDefault`, `unique` ni `references`; fechas como texto); `local_id` en todo y filtro por local activo; base nueva `rinde_nube.db`; tests en `test/base_de_datos_test.dart`. Queda para D: conectar (`fetchCredentials`, `uploadData`), leer `locales` sincronizado en vez de Supabase directo, y borrar datos al cerrar sesión.
 
+- **Etapa D (2026-11-12):** `lib/funciones/sincronizacion/` (conector con `fetchCredentials` y `uploadData`; lista de columnas permitidas; errores permanentes a `subidas_rechazadas`); conexión al entrar y borrado del teléfono al salir (con aviso si hay cambios sin subir, y borrado si los datos son de otra cuenta); el local sale de la tabla `locales` sincronizada (estados: sincronizando, sin conexión, sin local, con local); suscripción a `datos_local` con el id del local activo; Streams en `powersync/sync-streams.yaml`. Pendiente: mostrar en la app las subidas rechazadas.
+
 ## Pendientes antes de publicar
 - **Cuenta borrada del único miembro:** al borrar un usuario, sus filas en `miembros` se borran en cascada y `locales.creado_por` queda en null. Si era el **único** miembro, el local y todos sus datos quedan **huérfanos**: nadie los ve, pero siguen guardados. Eso choca con la política de Google Play de borrar los datos del usuario y ocupa espacio. Opciones a decidir:
   - Función `borrar_mi_cuenta()` (security definer) que borre primero los locales donde el usuario es el único dueño (los datos caen en cascada) y después el usuario.

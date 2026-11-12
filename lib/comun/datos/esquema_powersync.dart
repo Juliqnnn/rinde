@@ -78,4 +78,16 @@ const esquemaPowerSync = Schema([
     Column.text('ingrediente_id'),
     Column.real('cantidad'),
   ]),
+
+  // ---------- Solo en el teléfono, siempre ----------
+  // Cambios que el servidor rechazó para siempre (RLS, dato inválido).
+  // Se guardan aquí para no trabar la cola de subida y poder avisar.
+  Table.localOnly('subidas_rechazadas', [
+    Column.text('tabla'),
+    Column.text('fila_id'),
+    Column.text('operacion'),
+    Column.text('datos'), // JSON de lo que se intentó subir
+    Column.text('error'),
+    Column.text('fecha'),
+  ]),
 ]);

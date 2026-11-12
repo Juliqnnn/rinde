@@ -1,0 +1,32 @@
+# Rinde · Sync Streams de PowerSync (etapa D)
+# Se pegan en el panel de PowerSync → Sync Streams → Deploy.
+# Este archivo es la fuente; si cambias el panel, cambia esto también.
+#
+# PowerSync lee Postgres con un rol que SE SALTA RLS: lo que filtra aquí es
+# la única protección de la bajada. Cada consulta debe decir lo mismo que
+# las políticas RLS (es_miembro). Regla: toda consulta con
+# subscription.parameter() lleva además "AND local_id IN mios".
+config:
+  edition: 3
+
+streams:
+  # Siempre: mis locales y sus miembros (poca data). Sirve para elegir local.
+  mis_locales:
+    auto_subscribe: true
+    with:
+      mios: SELECT local_id FROM miembros WHERE usuario_id = auth.user_id()
+    queries:
+      - SELECT * FROM locales WHERE id IN mios
+      - SELECT * FROM miembros WHERE local_id IN mios
+
+  # Solo el local abierto: la app se suscribe con su id
+  # (suscribirDatosDelLocal en lib/funciones/local/local.dart).
+  # "AND local_id IN mios" es la cerradura: sin ella, cualquiera podría
+  # pedir el id de un local ajeno.
+  datos_local:
+    with:
+      mios: SELECT local_id FROM miembros WHERE usuario_id = auth.user_id()
+    queries:
+      - SELECT * FROM categorias WHERE local_id = subscription.parameter('local_id') AND local_id IN mios
+      - SELECT * FROM ingredientes WHERE local_id = subscription.parameter('local_id') AND local_id IN mios
+      # Etapas E y F: movimientos, platos y receta_items, con el mismo filtro.

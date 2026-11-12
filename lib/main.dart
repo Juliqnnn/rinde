@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rinde/app/puerta_sesion.dart';
-import 'package:rinde/comun/datos/proveedores.dart';
+import 'package:rinde/comun/datos/powersync.dart';
 import 'package:rinde/comun/tema/tema.dart';
 import 'package:rinde/funciones/sesion/sesion.dart';
 

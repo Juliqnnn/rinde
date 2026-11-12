@@ -28,8 +28,14 @@ class PuertaSesion extends ConsumerWidget {
     final local = ref.watch(localProvider);
     return local.when(
       loading: () => const _Cargando(),
+      // No debería pasar (los errores de red no llegan aquí); por si acaso.
       error: (_, _) => const _SinConexion(),
-      data: (l) => l == null ? const CrearLocalPantalla() : const Estructura(),
+      data: (estado) => switch (estado) {
+        LocalSincronizando() => const _Cargando(),
+        LocalSinConexion() => const _SinConexion(),
+        SinLocal() => const CrearLocalPantalla(),
+        ConLocal() => const Estructura(),
+      },
     );
   }
 }
@@ -43,6 +49,7 @@ class _Cargando extends StatelessWidget {
 }
 
 /// Primera vez en este teléfono y sin internet: no sabemos cuál es tu local.
+/// PowerSync reintenta solo; al volver internet, la pantalla cambia sola.
 class _SinConexion extends ConsumerWidget {
   const _SinConexion();
 
@@ -63,9 +70,10 @@ class _SinConexion extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () => ref.invalidate(localProvider),
-                child: const Text('Reintentar'),
+              const SizedBox(height: 8),
+              const Text(
+                'Seguimos intentando solos.',
+                textAlign: TextAlign.center,
               ),
               TextButton(
                 onPressed: () => ref.read(sesionProvider).salir(),

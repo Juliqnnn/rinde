@@ -1,6 +1,9 @@
-import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:powersync/powersync.dart';
+import 'package:rinde/comun/datos/powersync.dart';
 import 'package:rinde/funciones/sesion/sesion.dart';
+import 'package:rinde/funciones/sincronizacion/sincronizacion.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,11 +11,32 @@ class Local {
   final String id;
   final String nombre;
   const Local({required this.id, required this.nombre});
+}
 
-  factory Local.desdeMapa(Map<String, dynamic> m) =>
-      Local(id: m['id'] as String, nombre: m['nombre'] as String);
+/// En qué punto está la app respecto al local del usuario.
+sealed class EstadoLocal {
+  const EstadoLocal();
+}
 
-  Map<String, dynamic> aMapa() => {'id': id, 'nombre': nombre};
+/// Primera vez en este teléfono: esperando la primera sincronización.
+class LocalSincronizando extends EstadoLocal {
+  const LocalSincronizando();
+}
+
+/// Primera vez en este teléfono y sin internet: no sabemos cuál es tu local.
+/// (PowerSync sigue reintentando solo.)
+class LocalSinConexion extends EstadoLocal {
+  const LocalSinConexion();
+}
+
+/// Sincronizado, y el usuario no es miembro de ningún local.
+class SinLocal extends EstadoLocal {
+  const SinLocal();
+}
+
+class ConLocal extends EstadoLocal {
+  final Local local;
+  const ConLocal(this.local);
 }
 
 class LocalError implements Exception {
@@ -22,65 +46,48 @@ class LocalError implements Exception {
   String toString() => mensaje;
 }
 
-/// Busca y crea el local del usuario. Guarda una copia en el teléfono
-/// (shared_preferences) para poder abrir la app sin internet.
+/// Elige el local activo: el guardado si sigue entre los míos; si no, el
+/// primero (el más antiguo). null si no tengo locales.
+Local? elegirLocal(List<Local> mios, String? guardadoId) {
+  if (mios.isEmpty) return null;
+  for (final l in mios) {
+    if (l.id == guardadoId) return l;
+  }
+  return mios.first;
+}
+
 class LocalRepositorio {
   final _prefs = SharedPreferencesAsync();
   SupabaseClient get _supabase => Supabase.instance.client;
 
-  // La clave incluye el id del usuario: si en el mismo teléfono entra
-  // otra cuenta, nunca ve el local guardado de la anterior.
-  String _clave(String usuarioId) => 'local.$usuarioId';
+  // Solo se guarda el id del local activo (los datos vienen sincronizados).
+  // La clave incluye el usuario: otra cuenta nunca hereda la elección.
+  String _clave(String usuarioId) => 'local_activo.$usuarioId';
 
-  Future<Local?> _leerGuardado(String usuarioId) async {
-    final texto = await _prefs.getString(_clave(usuarioId));
-    if (texto == null) return null;
-    return Local.desdeMapa(jsonDecode(texto) as Map<String, dynamic>);
-  }
+  Future<String?> leerActivo(String usuarioId) =>
+      _prefs.getString(_clave(usuarioId));
 
-  Future<void> _guardar(String usuarioId, Local local) =>
-      _prefs.setString(_clave(usuarioId), jsonEncode(local.aMapa()));
+  Future<void> guardarActivo(String usuarioId, String localId) =>
+      _prefs.setString(_clave(usuarioId), localId);
 
-  Future<void> olvidar(String usuarioId) => _prefs.remove(_clave(usuarioId));
-
-  /// 1) Si está guardado en el teléfono, lo usa (funciona sin internet).
-  /// 2) Si no, lo pide a Supabase; RLS solo devuelve locales donde soy miembro.
-  /// Devuelve null si el usuario todavía no tiene local.
-  Future<Local?> cargar(String usuarioId) async {
-    final guardado = await _leerGuardado(usuarioId);
-    if (guardado != null) return guardado;
-
-    final fila = await _supabase
-        .from('locales')
-        .select('id, nombre')
-        .order('creado_en')
-        .limit(1)
-        .maybeSingle();
-    if (fila == null) return null;
-
-    final local = Local.desdeMapa(fila);
-    await _guardar(usuarioId, local);
-    return local;
-  }
-
-  /// Llama a la función crear_local de Supabase: crea el local y nos agrega
-  /// como dueño en una sola transacción. El dueño lo pone el servidor.
-  Future<Local> crear(String usuarioId, String nombre) async {
+  /// Llama a crear_local en Supabase (necesita internet): crea el local, nos
+  /// agrega como dueño y crea las categorías base, todo en el servidor.
+  /// La fila llega al teléfono por sincronización; aquí solo se marca
+  /// como activo.
+  Future<void> crear(String usuarioId, String nombre) async {
     try {
       final fila = await _supabase.rpc(
         'crear_local',
         params: {'p_nombre': nombre.trim()},
       );
-      final local = Local.desdeMapa(fila as Map<String, dynamic>);
-      await _guardar(usuarioId, local);
-      return local;
+      final id = (fila as Map<String, dynamic>)['id'] as String;
+      await guardarActivo(usuarioId, id);
     } on PostgrestException catch (e) {
       // Códigos que lanza crear_local en el SQL.
       switch (e.code) {
         case '23505': // Ya tiene un local (p. ej., creado desde otro teléfono)
-          final existente = await cargar(usuarioId);
-          if (existente != null) return existente;
-          throw const LocalError('Ya tienes un local.');
+          throw const LocalError(
+              'Ya tienes un local. Espera a que se sincronice.');
         case '22023':
           throw const LocalError('El nombre debe tener entre 1 y 60 caracteres.');
         default:
@@ -92,17 +99,78 @@ class LocalRepositorio {
 
 final localRepositorioProvider = Provider((ref) => LocalRepositorio());
 
-/// El local del usuario con sesión (null = aún no tiene).
-/// Se recalcula solo cuando cambia el usuario (entrar/salir): selectAsync
-/// mira únicamente el id, así renovar el token no lo recarga.
-final localProvider = FutureProvider<Local?>(
-  (ref) async {
-    final usuarioId =
-        await ref.watch(usuarioProvider.selectAsync((u) => u?.id));
-    if (usuarioId == null) return null;
-    return ref.read(localRepositorioProvider).cargar(usuarioId);
-  },
-  // Sin reintentos automáticos: si no hay internet, la pantalla muestra
-  // un botón "Reintentar" en vez de insistir sola.
-  retry: (_, _) => null,
-);
+/// El estado del local del usuario con sesión, en vivo: cambia solo cuando
+/// llega la primera sincronización o cambia la tabla locales.
+final localProvider = StreamProvider<EstadoLocal>((ref) async* {
+  final usuarioId =
+      await ref.watch(usuarioProvider.selectAsync((u) => u?.id));
+  if (usuarioId == null) return;
+
+  // Espera a que se borren datos de otra cuenta y se inicie la conexión.
+  await ref.watch(sincronizacionProvider.future);
+  final ps = ref.watch(powerSyncProvider);
+  final repo = ref.read(localRepositorioProvider);
+
+  // 1) Primera sincronización (hasSynced queda guardado en la base: desde
+  //    la segunda vez la app abre aunque no haya internet).
+  if (ps.currentStatus.hasSynced != true) {
+    yield const LocalSincronizando();
+    await for (final estado in ps.statusStream) {
+      if (estado.hasSynced == true || ps.currentStatus.hasSynced == true) {
+        break;
+      }
+      yield estado.downloadError != null
+          ? const LocalSinConexion()
+          : const LocalSincronizando();
+    }
+  }
+
+  // 2) Mis locales: PowerSync solo baja aquellos donde soy miembro.
+  final consulta = ps.watch(
+    'SELECT id, nombre FROM locales ORDER BY creado_en, id',
+  );
+  await for (final filas in consulta) {
+    final mios = [
+      for (final f in filas)
+        Local(id: f['id'] as String, nombre: f['nombre'] as String),
+    ];
+    final guardado = await repo.leerActivo(usuarioId);
+    final activo = elegirLocal(mios, guardado);
+    if (activo == null) {
+      yield const SinLocal();
+      continue;
+    }
+    if (activo.id != guardado) await repo.guardarActivo(usuarioId, activo.id);
+    yield ConLocal(activo);
+  }
+});
+
+/// El local activo (null si todavía no hay).
+final localActivoProvider = Provider<Local?>((ref) {
+  return switch (ref.watch(localProvider).asData?.value) {
+    ConLocal(:final local) => local,
+    _ => null,
+  };
+});
+
+/// Solo el id del local activo. Usar este (y no localProvider) para lo que
+/// depende del local: así no se recalcula cuando cambia otra cosa.
+final localIdActivoProvider =
+    Provider<String?>((ref) => ref.watch(localActivoProvider)?.id);
+
+/// Mientras el local esté abierto, pide a PowerSync sus datos (Stream
+/// "datos_local" con el id como parámetro). La Stream verifica en el
+/// servidor que yo sea miembro; si no, no baja nada.
+/// Devuelve la función para cancelar la suscripción.
+void Function() suscribirDatosDelLocal(PowerSyncDatabase ps, String localId) {
+  SyncStreamSubscription? suscripcion;
+  var cancelada = false;
+  ps.syncStream('datos_local', {'local_id': localId}).subscribe().then(
+    (s) => cancelada ? s.unsubscribe() : suscripcion = s,
+    onError: (Object e) => debugPrint('[SYNC] no se pudo suscribir: $e'),
+  );
+  return () {
+    cancelada = true;
+    suscripcion?.unsubscribe();
+  };
+}

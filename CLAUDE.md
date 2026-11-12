@@ -21,10 +21,11 @@ App para pequeños negocios de comida en Chile (completos, sándwiches, cafeter�
 - Capas: pantallas → estado (providers) → reglas (`logica/`) → datos (`datos/`).
 
 ## Estructura (por función)
-- `lib/main.dart` arranque (inicia Supabase).
+- `lib/main.dart` arranque (inicia Supabase y abre PowerSync).
+- `powersync/sync-streams.yaml` las Sync Streams (se pegan en el panel de PowerSync).
 - `lib/app/` estructura (pestañas), puerta_sesion (login o app).
 - `lib/comun/` lo compartido: `datos/` (base_de_datos.dart con tablas/migraciones/métodos, proveedores.dart con `baseDeDatosProvider`), `logica/` (costos, formato, medidas), `tema/` (colores, tema, cenefa; fuente Nunito en assets), `widgets/` (pantalla_vacia).
-- `lib/funciones/<función>/`: ingredientes, platos, sesion, local, inicio, ventas. Cada función tiene sus pantallas, providers y lógica.
+- `lib/funciones/<función>/`: ingredientes, platos, sesion, local, inicio, ventas, sincronizacion (conector PowerSync ↔ Supabase). Cada función tiene sus pantallas, providers y lógica.
 - Regla: subcarpetas (`datos/`, `logica/`, `pantallas/`) solo cuando la función tiene ~6 archivos o más; si no, queda plana.
 - Imports siempre como `package:rinde/...` (no rutas relativas).
 - `test/` platos_test.dart (costos), base_de_datos_test.dart (Drift sobre PowerSync real, sin nube), sesion_test.dart.
