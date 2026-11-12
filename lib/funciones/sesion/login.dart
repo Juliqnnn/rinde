@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthRetryableFetchException;
 import 'package:rinde/funciones/sesion/sesion.dart';
 import 'package:rinde/comun/tema/colores.dart';
 
@@ -28,6 +30,9 @@ class _LoginPantallaState extends ConsumerState<LoginPantalla> {
       if (e.code != GoogleSignInExceptionCode.canceled) {
         _error = 'No se pudo entrar con Google (${e.code.name}).';
       }
+    } on AuthRetryableFetchException {
+      // Error de red: Supabase no responde (sin internet).
+      _error = 'Necesitas internet para iniciar sesión.';
     } catch (e) {
       _error = 'No se pudo entrar: $e';
     } finally {

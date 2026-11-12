@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -66,15 +67,38 @@ class SesionError implements Exception {
 
 final sesionProvider = Provider<Sesion>((ref) => Sesion());
 
+/// El usuario con sesión guardada en el teléfono (aunque su token esté
+/// vencido y no haya internet). null si no hay sesión.
+User? usuarioActual() =>
+    nubeConfigurada ? Supabase.instance.client.auth.currentUser : null;
+
+/// Regla de sesión, separada de Supabase para poder testearla.
+///
+/// - El usuario sale SIEMPRE de [actual] (la sesión que Supabase guarda),
+///   no del evento: así un signedOut real da null y todo lo demás no.
+/// - Un error del stream (p. ej. sin internet al renovar el token) NO
+///   significa "sin sesión": Supabase conserva la sesión y reintenta solo.
+///   Se avisa a [alError] y se sigue escuchando.
+///   Ojo: el stream de Supabase es un ReplaySubject, así que al suscribirse
+///   repite errores antiguos; también se ignoran.
+Stream<U?> seguirUsuario<U>(
+  Stream<Object?> eventos,
+  U? Function() actual, {
+  void Function(Object error)? alError,
+}) async* {
+  yield actual();
+  yield* eventos
+      .handleError((Object e) => alError?.call(e))
+      .map((_) => actual());
+}
+
 /// Emite el usuario actual (o null) cada vez que se entra o se sale.
-final usuarioProvider = StreamProvider<User?>((ref) async* {
-  if (!nubeConfigurada) {
-    yield null;
-    return;
-  }
+final usuarioProvider = StreamProvider<User?>((ref) {
+  if (!nubeConfigurada) return Stream.value(null);
   final auth = Supabase.instance.client.auth;
-  yield auth.currentUser;
-  await for (final cambio in auth.onAuthStateChange) {
-    yield cambio.session?.user;
-  }
+  return seguirUsuario(
+    auth.onAuthStateChange,
+    () => auth.currentUser,
+    alError: (e) => debugPrint('[SESION] error ignorado: ${e.runtimeType}'),
+  );
 });

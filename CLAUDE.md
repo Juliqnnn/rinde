@@ -16,7 +16,7 @@ App para pequeños negocios de comida en Chile (completos, sándwiches, cafeter�
 - Toda tabla de negocio lleva el id del local y tiene Row Level Security (RLS) para que un local nunca vea datos de otro.
 
 ## Tecnologías
-- Flutter/Dart, Riverpod (providers, StreamProvider, `.family`), Drift (SQLite local, `watch()`, migraciones `onUpgrade`, schemaVersion 5), build_runner, uuid, image_picker, path_provider.
+- Flutter/Dart, Riverpod (providers, StreamProvider, `.family`), Drift (SQLite local, `watch()`, migraciones `onUpgrade`, schemaVersion 5), build_runner, uuid, image_picker, path_provider, supabase_flutter, google_sign_in, shared_preferences.
 - Nube (en prueba de concepto): Supabase (Postgres + Auth + RLS) y PowerSync (SQLite local sincronizado con Postgres, cola de subida con `uploadData()`).
 - Capas: pantallas → estado (providers) → reglas (`logica/`) → datos (`datos/`).
 
@@ -24,7 +24,7 @@ App para pequeños negocios de comida en Chile (completos, sándwiches, cafeter�
 - `lib/main.dart` arranque (inicia Supabase).
 - `lib/app/` estructura (pestañas), puerta_sesion (login o app).
 - `lib/comun/` lo compartido: `datos/` (base_de_datos.dart con tablas/migraciones/métodos, proveedores.dart con `baseDeDatosProvider`), `logica/` (costos, formato, medidas), `tema/` (colores, tema, cenefa; fuente Nunito en assets), `widgets/` (pantalla_vacia).
-- `lib/funciones/<función>/`: ingredientes, platos, sesion, inicio, ventas. Cada función tiene sus pantallas, providers y lógica.
+- `lib/funciones/<función>/`: ingredientes, platos, sesion, local, inicio, ventas. Cada función tiene sus pantallas, providers y lógica.
 - Regla: subcarpetas (`datos/`, `logica/`, `pantallas/`) solo cuando la función tiene ~6 archivos o más; si no, queda plana.
 - Imports siempre como `package:rinde/...` (no rutas relativas).
 - `test/` platos_test.dart (los tests de costos están ahí).
