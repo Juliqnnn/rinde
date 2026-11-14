@@ -49,3 +49,6 @@ app.*.map.json
 
 # Claves de Supabase (nunca al repo)
 /config.json
+
+# Instrucciones locales para Claude Code (no van al repo)
+/CLAUDE.md
