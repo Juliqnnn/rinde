@@ -1,0 +1,8 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # Fechas como texto ISO 8601 (no como número): así llegan desde
+          # Postgres vía PowerSync y así se suben.
+          store_date_time_values_as_text: true

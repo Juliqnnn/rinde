@@ -46,3 +46,9 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Claves de Supabase (nunca al repo)
+/config.json
+
+# Instrucciones locales para Claude Code (no van al repo)
+/CLAUDE.md
